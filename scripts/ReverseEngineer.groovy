@@ -44,6 +44,12 @@ target(reverseEngineer: 'Reverse-engineers a database and creates domain classes
 
 	revengConfig.manyToManyBelongsTos.each { manyTable, belongsTable -> strategy.setManyToManyBelongsTo manyTable, belongsTable }
 
+	revengConfig.includeTables.each { table -> strategy.addIncludeTable table }
+
+	revengConfig.includeTableRegexes.each { pattern -> strategy.addIncludeTableRegex pattern }
+
+	revengConfig.includeTableAntPatterns.each { pattern -> strategy.addIncludeTableAntPattern pattern }
+
 	revengConfig.excludeTables.each { table -> strategy.addExcludeTable table }
 
 	revengConfig.excludeTableRegexes.each { pattern -> strategy.addExcludeTableRegex pattern }

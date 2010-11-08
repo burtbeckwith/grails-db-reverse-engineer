@@ -34,6 +34,9 @@ class GrailsReverseEngineeringStrategy extends DefaultReverseEngineeringStrategy
 	private Set<String> excludeTables = []
 	private Set<Pattern> excludeTableRegexes = []
 	private Set<String> excludeTableAntPatterns = []
+	private Set<String> includeTables = []
+	private Set<Pattern> includeTableRegexes = []
+	private Set<String> includeTableAntPatterns = []
 	private Map<String, List<String>> excludeColumns = [:]
 	private Map<String, List<Pattern>> excludeColumnRegexes = [:]
 	private Map<String, List<String>> excludeColumnAntPatterns = [:]
@@ -45,7 +48,40 @@ class GrailsReverseEngineeringStrategy extends DefaultReverseEngineeringStrategy
 
 	@Override
 	boolean excludeTable(TableIdentifier ti) {
+
 		String name = ti.name
+
+		if (includeTables || includeTableRegexes || includeTableAntPatterns) {
+			return isNotIncluded(name)
+		}
+
+		isExcluded name
+	}
+
+	private boolean isNotIncluded(String name) {
+		if (!includeTables.contains(name)) {
+			log.debug "table $name not included by name"
+			return true
+		}
+
+		for (Pattern pattern : includeTableRegexes) {
+			if (!pattern.matcher(name).matches()) {
+				log.debug "table $name not included by regex $pattern"
+				return true
+			}
+		}
+
+		for (String pattern : includeTableAntPatterns) {
+			if (!antMatcher.match(pattern, name)) {
+				log.debug "table $name not included by pattern $pattern"
+				return true
+			}
+		}
+
+		false
+	}
+
+	private boolean isExcluded(String name) {
 		if (excludeTables.contains(name)) {
 			log.debug "table $name excluded by name"
 			return true
@@ -137,6 +173,24 @@ class GrailsReverseEngineeringStrategy extends DefaultReverseEngineeringStrategy
 	 * @param pattern the pattern
 	 */
 	void addExcludeTableAntPattern(String pattern) { excludeTableAntPatterns << pattern }
+
+	/**
+	 * Register a table name to include.
+	 * @param name the name
+	 */
+	void addIncludeTable(String name) { includeTables << name }
+
+	/**
+	 * Register a regex pattern for table names to include.
+	 * @param pattern the pattern
+	 */
+	void addIncludeTableRegex(String pattern) { includeTableRegexes << Pattern.compile(pattern) }
+
+	/**
+	 * Register an Ant-style pattern for table names to include.
+	 * @param pattern the pattern
+	 */
+	void addIncludeTableAntPattern(String pattern) { includeTableAntPatterns << pattern }
 
 	/**
 	 * Register a column name to exclude.
