@@ -1,0 +1,563 @@
+In this tutorial we'll create a MySQL database and generate domain classes from it.
+
+h4. 1. Create your Grails application.
+
+{code}
+$ grails create-app reveng-test
+$ cd reveng-test
+{code}
+
+h4. 2. Install the plugin.
+{code}
+$ grails install-plugin reverse-engineer
+{code}
+
+h4. 3. Configure the development environment for MySQL.
+
+Set these property values in the @development@ section of @grails-app/conf/DataSource.groovy@
+
+{code}
+dataSource {
+   url = 'jdbc:mysql://localhost/reveng'
+   driverClassName = 'com.mysql.jdbc.Driver'
+   username = 'reveng'
+   password = 'reveng'
+   dialect = org.hibernate.dialect.MySQL5InnoDBDialect
+}
+{code}
+
+Also add a dependency for the MySQL JDBC driver in @grails-app/conf/BuildConfig.groovy@:
+
+{code}
+dependencies {
+   runtime 'mysql:mysql-connector-java:5.1.5'
+}
+{code}
+
+and be sure to uncomment the @mavenCentral()@ repo:
+
+{code}
+repositories {
+   grailsPlugins()
+   grailsHome()
+   grailsCentral()
+
+   mavenCentral()
+}
+{code}
+
+h4. 4. Create the database.
+
+As the root user or another user that has rights to create a database and configure grants, run
+
+{code}
+create database reveng;
+grant all on reveng.* to reveng\@localhost identified by 'reveng';
+{code}
+
+h4. 5. Create the database tables.
+
+Run these create and alter statements in the @reveng@ database:
+
+{code}
+use reveng;
+
+create table author (
+   id bigint not null auto_increment,
+   version bigint not null,
+   name varchar(255) not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table author_books (
+   author_id bigint not null,
+   book_id bigint not null,
+   primary key (author_id, book_id)
+) ENGINE=InnoDB;
+
+create table book (
+   id bigint not null auto_increment,
+   version bigint not null,
+   title varchar(255) not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table compos (
+   first_name varchar(255) not null,
+   last_name varchar(255) not null,
+   version bigint not null,
+   other varchar(255) not null,
+   primary key (first_name, last_name)
+) ENGINE=InnoDB;
+
+create table compound_unique (
+   id bigint not null auto_increment,
+   version bigint not null,
+   prop1 varchar(255) not null,
+   prop2 varchar(255) not null,
+   prop3 varchar(255) not null,
+   prop4 varchar(255) not null,
+   prop5 varchar(255) not null,
+   primary key (id),
+   unique (prop4, prop3, prop2)
+) ENGINE=InnoDB;
+
+create table library (
+   id bigint not null auto_increment,
+   version bigint not null,
+   name varchar(255) not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table other (
+   username varchar(255) not null,
+   nonstandard_version_name bigint not null,
+   primary key (username)
+) ENGINE=InnoDB;
+
+create table role (
+   id bigint not null auto_increment,
+   version bigint not null,
+   authority varchar(255) not null unique,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table thing (
+   thing_id bigint not null auto_increment,
+   version bigint not null,
+   email varchar(255) not null unique,
+   float_value float not null,
+   name varchar(123),
+   primary key (thing_id)
+) ENGINE=InnoDB;
+
+create table user (
+   id bigint not null auto_increment,
+   version bigint not null,
+   account_expired bit not null,
+   account_locked bit not null,
+   enabled bit not null,
+   password varchar(255) not null,
+   password_expired bit not null,
+   username varchar(255) not null unique,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table user_role (
+   role_id bigint not null,
+   user_id bigint not null,
+   date_updated datetime not null,
+   primary key (role_id, user_id)
+) ENGINE=InnoDB;
+
+create table visit (
+   id bigint not null auto_increment,
+   library_id bigint not null,
+   person varchar(255) not null,
+   visit_date datetime not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+alter table author_books add index FK24C812F63FA913A (book_id),
+add constraint FK24C812F63FA913A foreign key (book_id) references book (id);
+
+alter table author_books add index FK24C812F6CD85EDFA (author_id),
+add constraint FK24C812F6CD85EDFA foreign key (author_id) references author (id);
+
+alter table user_role add index FK143BF46A52388A1A (role_id),
+add constraint FK143BF46A52388A1A foreign key (role_id) references role (id);
+
+alter table user_role add index FK143BF46AF7634DFA (user_id),
+add constraint FK143BF46AF7634DFA foreign key (user_id) references user (id);
+
+alter table visit add index FK6B04D4B4AEC8BBA (library_id),
+add constraint FK6B04D4B4AEC8BBA foreign key (library_id) references library (id);
+{code}
+
+h4. 6. Configure the reverse engineering process.
+
+Add these configuration options to @grails-app/conf/Config.groovy@:
+
+{code}
+grails.plugin.reveng.packageName = 'com.revengtest'
+grails.plugin.reveng.versionColumns = [other: 'nonstandard_version_name']
+grails.plugin.reveng.manyToManyTables = ['user_role']
+grails.plugin.reveng.manyToManyBelongsTos = ['user_role': 'role', 'author_books': 'book']
+{code}
+
+h4. 7. Run the reverse-engineer script.
+
+{code}
+grails reverse-engineer
+{code}
+
+h4. 8. Look at the generated domain classes.
+
+h4. Author and Book domain classes.
+
+The @author@ and @book@ tables have a many-to-many relationship, which uses the @author_books@ join table:
+
+{code}
+create table author (
+   id bigint not null auto_increment,
+   version bigint not null,
+   name varchar(255) not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table author_books (
+   author_id bigint not null,
+   book_id bigint not null,
+   primary key (author_id, book_id)
+) ENGINE=InnoDB;
+
+create table book (
+   id bigint not null auto_increment,
+   version bigint not null,
+   title varchar(255) not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+alter table author_books add index FK24C812F63FA913A (book_id),
+add constraint FK24C812F63FA913A foreign key (book_id) references book (id);
+
+alter table author_books add index FK24C812F6CD85EDFA (author_id),
+add constraint FK24C812F6CD85EDFA foreign key (author_id) references author (id);
+
+{code}
+
+After running the script you'll have classes similar to these (I've removed empty @mapping@ and @constraints@ blocks):
+
+{code}
+class Author {
+   String name
+   static hasMany = [books: Book]
+}
+{code}
+
+and
+
+{code}
+class Book {
+   String title
+   static hasMany = [authors: Author]
+   static belongsTo = Author
+}
+{code}
+
+@Book@ has the line @static belongsTo = Author@ because we specified this in @Config.groovy@ with the @grails.plugin.reveng.manyToManyBelongsTos@ property.
+
+h4. Compos domain class.
+
+The @compos@ table has a composite primary key (made up of the @first_name@ and @last_name@ columns):
+
+{code}
+create table compos (
+   first_name varchar(255) not null,
+   last_name varchar(255) not null,
+   version bigint not null,
+   other varchar(255) not null,
+   primary key (first_name, last_name)
+) ENGINE=InnoDB;
+{code}
+
+and it generates this domain class:
+
+{code}
+import org.apache.commons.lang.builder.EqualsBuilder
+import org.apache.commons.lang.builder.HashCodeBuilder
+
+class Compos implements Serializable {
+
+   String firstName
+   String lastName
+   String other
+
+   int hashCode() {
+      def builder = new HashCodeBuilder()
+      builder.append firstName
+      builder.append lastName
+      builder.toHashCode()
+   }
+
+   boolean equals(other) {
+      if (other == null) return false
+      def builder = new EqualsBuilder()
+      builder.append firstName, other.firstName
+      builder.append lastName, other.lastName
+      builder.isEquals()
+   }
+
+   static mapping = {
+      id composite: ["firstName", "lastName"]
+   }
+}
+{code}
+
+Since it has a composite primary key, the class is its own primary key so it has to implement @Serializable@ and implement @hashCode@ and @equals@.
+
+h4. CompoundUnique domain class.
+
+The @compound_unique@ table has five properties, three of which are in a compound unique index:
+
+{code}
+create table compound_unique (
+   id bigint not null auto_increment,
+   version bigint not null,
+   prop1 varchar(255) not null,
+   prop2 varchar(255) not null,
+   prop3 varchar(255) not null,
+   prop4 varchar(255) not null,
+   prop5 varchar(255) not null,
+   primary key (id),
+   unique (prop4, prop3, prop2)
+) ENGINE=InnoDB;
+{code}
+
+and it generates this domain class:
+
+{code}
+class CompoundUnique {
+
+   String prop1
+   String prop2
+   String prop3
+   String prop4
+   String prop5
+
+   static constraints = {
+      prop2 unique: ["prop3", "prop4"]
+   }
+}
+{code}
+
+h4. Library and Visit domain classes.
+
+The @library@ and @visit@ tables have a one-to-many relationship:
+
+{code}
+create table library (
+   id bigint not null auto_increment,
+   version bigint not null,
+   name varchar(255) not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table visit (
+   id bigint not null auto_increment,
+   library_id bigint not null,
+   person varchar(255) not null,
+   visit_date datetime not null,
+   primary key (id)
+) ENGINE=InnoDB;
+
+alter table visit add index FK6B04D4B4AEC8BBA (library_id),
+add constraint FK6B04D4B4AEC8BBA foreign key (library_id) references library (id);
+{code}
+
+and they generate these domain classes:
+
+{code}
+class Library {
+   String name
+   static hasMany = [visits: Visit]
+}
+{code}
+
+{code}
+class Visit {
+
+   String person
+   Date visitDate
+
+   static belongsTo = [library: Library]
+
+   static mapping = {
+      version false
+   }
+}
+{code}
+
+@visit@ has no @version@ column, so the @Visit@ has optimistic lock checking disabled (@version false@).
+
+h4. Other domain class.
+
+The @other@ table has a string primary key, and an optimistic locking column that's not named @version@. Since we configured this with the @grails.plugin.reveng.versionColumns@ property, the column is resolved correctly:
+
+{code}
+create table other (
+   username varchar(255) not null,
+   nonstandard_version_name bigint not null,
+   primary key (username)
+) ENGINE=InnoDB;
+{code}
+
+{code}
+class Other {
+
+   String username
+
+   static mapping = {
+      id name: "username", generator: "assigned"
+      version "nonstandard_version_name"
+   }
+}
+{code}
+
+h4. User and Role domain classes.
+
+The @user@ and @role@ tables have a many-to-many relationship, which uses the @user_role@ join table:
+
+{code}
+create table role (
+   id bigint not null auto_increment,
+   version bigint not null,
+   authority varchar(255) not null unique,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table user (
+   id bigint not null auto_increment,
+   version bigint not null,
+   account_expired bit not null,
+   account_locked bit not null,
+   enabled bit not null,
+   password varchar(255) not null,
+   password_expired bit not null,
+   username varchar(255) not null unique,
+   primary key (id)
+) ENGINE=InnoDB;
+
+create table user_role (
+   role_id bigint not null,
+   user_id bigint not null,
+   date_updated datetime not null,
+   primary key (role_id, user_id)
+) ENGINE=InnoDB;
+
+alter table user_role add index FK143BF46A52388A1A (role_id),
+add constraint FK143BF46A52388A1A foreign key (role_id) references role (id);
+
+alter table user_role add index FK143BF46AF7634DFA (user_id),
+add constraint FK143BF46AF7634DFA foreign key (user_id) references user (id);
+{code}
+
+The @user_role@ table has an extra column (@date_updated@) and would be ignored by default, but since we configured it with the @grails.plugin.reveng.manyToManyTables@ property it's resolved correctly:
+
+{code}
+class Role {
+
+   String authority
+
+   static hasMany = [users: User]
+   static belongsTo = User
+
+   static constraints = {
+      authority unique: true
+   }
+}
+{code}
+
+{code}
+class User {
+
+   boolean accountExpired
+   boolean accountLocked
+   boolean enabled
+   String password
+   boolean passwordExpired
+   String username
+
+   static hasMany = [roles: Role]
+
+   static constraints = {
+      username unique: true
+   }
+}
+{code}
+
+h4. Thing domain class.
+
+The @thing@ table has a non-standard primary key column (@thing_id@) and a unique constraint on the @email@ column. The @name@ column is nullable, and is defined as @varchar(123)@:
+
+{code}
+create table thing (
+   thing_id bigint not null auto_increment,
+   version bigint not null,
+   email varchar(255) not null unique,
+   float_value float not null,
+   name varchar(123),
+   primary key (thing_id)
+) ENGINE=InnoDB;
+{code}
+
+and it generates this domain class:
+
+{code}
+class Thing {
+
+   String email
+   float floatValue
+   String name
+
+   static mapping = {
+      id column: "thing_id"
+   }
+
+   static constraints = {
+      email unique: true
+      name nullable: true, maxSize: 123
+   }
+}
+{code}
+
+h4. 9. Update a table and re-run the script.
+
+Add a new column to the @thing@ table:
+
+{code}
+alter table thing add new_column boolean;
+{code}
+
+We'll re-run the script but need to configure it to generate the updated domain class in a different directory from the default so we can compare with the original. To configure this, set the value of the @grails.plugin.reveng.destDir@ property in @grails-app/conf/Config.groovy@:
+
+{code}
+grails.plugin.reveng.destDir = 'temp_reverse_engineer'
+{code}
+
+Also change the configuration to only include the @thing@ table:
+
+{code}
+grails.plugin.reveng.includeTables = ['thing']
+{code}
+
+Re-eun the reverse-engineer script:
+
+{code}
+grails reverse-engineer
+{code}
+
+The script will generate this domain class in the temp_reverse_engineer/com/revengtest folder:
+
+{code}
+class Thing {
+
+	String email
+	float floatValue
+	String name
+	Boolean newColumn
+
+	static mapping = {
+		id column: "thing_id"
+	}
+
+	static constraints = {
+		email unique: true
+		name nullable: true, maxSize: 123
+		newColumn nullable: true
+	}
+}
+{code}
+
+The domain class has a new @Boolean newColumn@ field and a @nullable@ constraint. Since this generated the correct changes it's safe to move replace the previous domain class with this one.
+
