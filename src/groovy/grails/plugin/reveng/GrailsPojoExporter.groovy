@@ -14,9 +14,10 @@
  */
 package grails.plugin.reveng
 
-import org.hibernate.tool.hbm2x.Cfg2HbmTool;
+import org.hibernate.tool.hbm2x.Cfg2HbmTool
 import org.hibernate.tool.hbm2x.Cfg2JavaTool
 import org.hibernate.tool.hbm2x.POJOExporter
+import org.hibernate.tool.hbm2x.pojo.POJOClass
 
 /**
  * Customizes the artifact name and source template, and customizes the tools.
@@ -27,8 +28,10 @@ class GrailsPojoExporter extends POJOExporter {
 
 	private Cfg2HbmTool c2h
 	private GrailsCfg2JavaTool c2j
+	private boolean overwrite
 
-	GrailsPojoExporter() {
+	GrailsPojoExporter(boolean overwrite) {
+		this.overwrite = overwrite
 		c2h = new Cfg2HbmTool()
 		c2j = new GrailsCfg2JavaTool(c2h, getConfiguration())
 	}
@@ -44,4 +47,16 @@ class GrailsPojoExporter extends POJOExporter {
 
 	@Override
 	Cfg2JavaTool getCfg2JavaTool() { c2j }
+
+	@Override
+	protected void exportPOJO(Map additionalContext, POJOClass element) {
+		GrailsTemplateProducer producer = new GrailsTemplateProducer(
+			getTemplateHelper(), getArtifactCollector(), overwrite)
+		additionalContext.pojo = element
+		additionalContext.clazz = element.decoratedObject
+		String filename = resolveFilename(element)
+		producer.produce additionalContext, getTemplateName(),
+			new File(getOutputDirectory(), filename),
+			templateName, element.toString()
+	}
 }

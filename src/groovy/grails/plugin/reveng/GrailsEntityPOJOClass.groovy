@@ -14,17 +14,17 @@
  */
 package grails.plugin.reveng
 
-import grails.util.GrailsNameUtils;
+import grails.util.GrailsNameUtils
 
 import org.hibernate.cfg.Configuration
 import org.hibernate.cfg.Environment
 import org.hibernate.mapping.Column
-import org.hibernate.mapping.ForeignKey;
+import org.hibernate.mapping.ForeignKey
 import org.hibernate.mapping.ManyToOne
 import org.hibernate.mapping.PersistentClass
 import org.hibernate.mapping.Property
 import org.hibernate.mapping.Table
-import org.hibernate.mapping.UniqueKey;
+import org.hibernate.mapping.UniqueKey
 import org.hibernate.mapping.Value
 import org.hibernate.tool.hbm2x.Cfg2HbmTool
 import org.hibernate.tool.hbm2x.Cfg2JavaTool
@@ -171,7 +171,7 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 		String delimiter = ''
 		imports.eachLine { String line ->
 			line -= ';'
-			if (!line.startsWith('import java.util.')) {
+			if (isValidImport(line - 'import ')) {
 				fixed.append delimiter
 				fixed.append line
 				delimiter = newline
@@ -185,10 +185,43 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 			fixed.append delimiter
 			fixed.append 'import org.apache.commons.lang.builder.HashCodeBuilder'
 			fixed.append delimiter
-			fixed.append delimiter
 		}
 
-		fixed.toString()
+		imports = fixed.toString()
+		if (imports) {
+			return imports + newline + newline
+		}
+
+		''
+	}
+
+	private boolean isValidImport(String candidate) {
+		if ('java.math.BigDecimal'.equals(candidate) ||
+		    'java.math.BigInteger'.equals(candidate)) {
+			return false
+		}
+
+		if (isInPackage(candidate, 'java.io') ||
+		    isInPackage(candidate, 'java.net') ||
+		    isInPackage(candidate, 'java.util')) {
+			return false
+		}
+
+		true
+	}
+
+	private boolean isInPackage(String candidate, String pkg) {
+		if (!candidate.contains(pkg)) {
+			return false
+		}
+
+		int index = candidate.lastIndexOf('.')
+		if (index == -1) {
+			return false
+		}
+
+		String candidatePackage = candidate[0..index - 1]
+		candidatePackage == pkg
 	}
 
 	String renderHashCodeAndEquals() {
@@ -285,13 +318,16 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 
 		def belongs = []
 		def hasMany = []
+		def newProperties = []
 		super.getAllPropertiesIterator().each {
 			if (it == versionProperty || it == idProperty) {
 				return
 			}
 
 			if (it.value instanceof ManyToOne) {
-				belongs << "$it.name: ${classShortName(it.value.referencedEntityName)}"
+				String classShortName = classShortName(it.value.referencedEntityName)
+				newProperties << "\t$classShortName $it.name"
+				belongs << classShortName
 			}
 
 			if (it.value instanceof org.hibernate.mapping.Set) {
@@ -299,25 +335,27 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 				def strategy = GrailsReverseEngineeringStrategy.INSTANCE
 				if (strategy.isManyToManyTable(it.value.collectionTable)) {
 					if (strategy.isManyToManyBelongsTo(it.value.collectionTable, it.persistentClass.table)) {
-						belongs << generateManyToManyBelongsTo(it)
+						belongs << findManyToManyOtherSide(it)
 					}
 				}
 			}
 		}
 
-		if (belongs || hasMany) {
+		if (newProperties || belongs || hasMany) {
 			def many = new StringBuilder()
+			if (newProperties) {
+				for (newProperty in newProperties) {
+					many.append newProperty
+					many.append newline
+				}
+				many.append newline
+			}
 			if (hasMany) {
 				many.append combine('\tstatic hasMany = [', ', ', ']', hasMany)
 				many.append newline
 			}
 			if (belongs) {
-				if (belongs[0].contains(':')) {
-					many.append combine('\tstatic belongsTo = [', ', ', ']', belongs)
-				}
-				else {
-					many.append combine('\tstatic belongsTo = ', ', ', '', belongs)
-				}
+				many.append combine('\tstatic belongsTo = [', ', ', ']', belongs)
 				many.append newline
 			}
 			return many.toString()
@@ -330,7 +368,7 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 		getIdentifierProperty().columnSpan > 1 ? ' implements Serializable ' : ' '
 	}
 
-	private String generateManyToManyBelongsTo(Property prop) {
+	private String findManyToManyOtherSide(Property prop) {
 		String belongsTo
 		prop.value.collectionTable.foreignKeyIterator.each { ForeignKey fk ->
 			if (prop.value.table != fk.referencedTable) {

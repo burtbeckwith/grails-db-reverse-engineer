@@ -31,10 +31,25 @@ target(reverseEngineer: 'Reverse-engineers a database and creates domain classes
 	reenigne.password = dsConfig.password ?: ''
 	reenigne.username = dsConfig.username ?: 'sa'
 	reenigne.url = dsConfig.url ?: 'jdbc:hsqldb:mem:testDB' // 'jdbc:h2:mem:testDB'
+	if (dsConfig.dialect instanceof String) {
+		reenigne.dialect = dsConfig.dialect
+	}
+	else if (dsConfig.dialect instanceof Class) {
+		reenigne.dialect = dsConfig.dialect.name
+	}
 
 	def revengConfig = CH.config.grails.plugin.reveng
 	reenigne.packageName = revengConfig.packageName ?: metadata['app.name']
 	reenigne.destDir = new File(basedir, revengConfig.destDir ?: 'grails-app/domain')
+	if (revengConfig.defaultSchema) {
+		reenigne.defaultSchema = revengConfig.defaultSchema
+	}
+	if (revengConfig.defaultCatalog) {
+		reenigne.defaultCatalog = revengConfig.defaultCatalog
+	}
+	if (revengConfig.overwriteExisting instanceof Boolean) {
+		reenigne.overwrite = revengConfig.overwriteExisting
+	}
 
 	def strategy = reenigne.reverseEngineeringStrategy
 

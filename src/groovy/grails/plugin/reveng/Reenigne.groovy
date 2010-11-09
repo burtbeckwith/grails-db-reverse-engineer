@@ -16,7 +16,7 @@ package grails.plugin.reveng
 
 import grails.util.GrailsUtil
 
-import org.hibernate.cfg.JDBCMetaDataConfiguration
+import org.hibernate.cfg.Environment
 import org.hibernate.cfg.reveng.ReverseEngineeringSettings
 import org.hibernate.tool.hbm2x.Exporter
 import org.hibernate.tool.hbm2x.HibernateMappingExporter
@@ -34,24 +34,30 @@ class Reenigne {
 	String password
 	String username
 	String url
+	String dialect
+	String defaultSchema
+	String defaultCatalog
+
 	boolean preferBasicCompositeIds = true
 	boolean detectOneToOne = true
 	boolean detectManyToMany = true
 	boolean detectOptimisticLock = true
 	boolean ejb3 = false
 	boolean jdk5 = true
+	boolean overwrite = true
 
 	GrailsReverseEngineeringStrategy reverseEngineeringStrategy = GrailsReverseEngineeringStrategy.INSTANCE
 
-	private GrailsPojoExporter pojoExporter = new GrailsPojoExporter()
+	private GrailsPojoExporter pojoExporter
 	private HibernateMappingExporter hbmXmlExporter = new HibernateMappingExporter()
-	private JDBCMetaDataConfiguration configuration = new JDBCMetaDataConfiguration()
+	private GrailsJdbcMetaDataConfiguration configuration = new GrailsJdbcMetaDataConfiguration()
 	private Properties properties = new Properties()
 
 	void execute() {
 		try {
 			buildConfiguration()
 
+			pojoExporter = new GrailsPojoExporter(overwrite)
 			configureExporter pojoExporter
 			pojoExporter.getProperties().setProperty('ejb3', ejb3.toString())
 			pojoExporter.getProperties().setProperty('jdk5', jdk5.toString())
@@ -77,10 +83,20 @@ class Reenigne {
 	private void buildConfiguration() {
 		properties.putAll(configuration.getProperties())
 
-		properties.put 'hibernate.connection.driver_class', driverClass
-		properties.put 'hibernate.connection.password', password
-		properties.put 'hibernate.connection.url', url
-		properties.put 'hibernate.connection.username', username
+		properties.put Environment.DRIVER, driverClass
+		properties.put Environment.PASS, password
+		properties.put Environment.URL, url
+		properties.put Environment.USER, username
+		if (dialect) {
+			properties.put Environment.DIALECT, dialect
+		}
+		if (defaultSchema) {
+			properties.put Environment.DEFAULT_SCHEMA, defaultSchema
+		}
+		if (defaultCatalog) {
+			properties.put Environment.DEFAULT_CATALOG, defaultCatalog
+		}
+
 		configuration.setProperties(properties)
 
 		configuration.setPreferBasicCompositeIds preferBasicCompositeIds
@@ -92,8 +108,8 @@ class Reenigne {
 				.setDetectOptimisticLock(detectOptimisticLock)
 		reverseEngineeringStrategy.setSettings settings
 
-		configuration.setReverseEngineeringStrategy reverseEngineeringStrategy
-		configuration.readFromJDBC()
+		configuration.reverseEngineeringStrategy = reverseEngineeringStrategy
+		configuration.readFromJDBC defaultCatalog, defaultSchema
 		configuration.buildMappings()
 	}
 }
