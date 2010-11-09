@@ -38,11 +38,16 @@ grails.plugin.reveng.manyToManyTables | none | a List of table names that should
 
 h4. Other properties
 
-These remaining configuration options allow you to specify the folder where the domain classes are generated (@grails.plugin.reveng.destDir@) and non-standard 'version' column names (@grails.plugin.reveng.versionColumns@).
+These remaining configuration options allow you to specify the folder where the domain classes are generated (@grails.plugin.reveng.destDir@), whether to overwrite existing classes (@grails.plugin.reveng.overwriteExisting@) and non-standard 'version' column names (@grails.plugin.reveng.versionColumns@).
+
+There are also properties to set the default schema name (@grails.plugin.reveng.defaultSchema@) and catalog (@grails.plugin.reveng.defaultCatalog@) name which are useful when working with Oracle.
 
 {table}
 *Property* | *Default* | *Meaning*
 grails.plugin.reveng.destDir | 'grails-app/domain' | destination folder for the generated classes, relative to the project root
 grails.plugin.reveng.versionColumns | none | a Map of table name -> version column name, for tables with an optimistic locking column that's not named 'version'
+grails.plugin.reveng.overwriteExisting | @true@ | whether to overwrite existing domain classes
+grails.plugin.reveng.defaultSchema | none | the default database schema name
+grails.plugin.reveng.defaultCatalog | none | the default database catalog name
 {table}
 

@@ -67,9 +67,7 @@ h4. Destination folder
 
 By default the domain classes are generated under the @grails-app/domain@ folder in the package specified. But you can override the destination, for example if you're re-running the process and want to compare the new classes with the previous ones.
 
-{warning}
-The @reverse-engineer@ script will overwrite existing classes without warning. This is a limitation of the underlying Hibernate Tools library which is used to create the classes.
-{warning}
+By default the @reverse-engineer@ script will overwrite existing classes. You can set the @grails.plugin.reveng.overwriteExisting@ property to @false@ to override this behavior and not overwrite existing files.
 
 h4. Many-to-many tables
 
@@ -81,3 +79,6 @@ h4. Optimistic locking columns
 
 Hibernate assumes that columns used for optimistic lock detection are called @version@. If you have customized one or more column names, you can direct the script about what the custom names are with the @grails.plugin.reveng.versionColumns@ property. This is demonstrated in [the tutorial|guide:4 Tutorial].
 
+h4. Logging
+
+All of the plugin classes are in the @grails.plugin.reveng@ package, so you can configure that package for logging to see generated messages.
