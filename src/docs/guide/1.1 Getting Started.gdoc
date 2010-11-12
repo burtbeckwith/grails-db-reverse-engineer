@@ -1,7 +1,7 @@
 h4. The first step is installing the plugin:
 
 {code}
-grails install-plugin reverse-engineer
+grails install-plugin db-reverse-engineer
 {code}
 
 There are no required initialization steps but there are some configuration options described in the [next section|guide:2 Configuration].

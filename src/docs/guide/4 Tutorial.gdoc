@@ -9,7 +9,7 @@ $ cd reveng-test
 
 h4. 2. Install the plugin.
 {code}
-$ grails install-plugin reverse-engineer
+$ grails install-plugin db-reverse-engineer
 {code}
 
 h4. 3. Configure the development environment for MySQL.
@@ -185,10 +185,10 @@ grails.plugin.reveng.manyToManyTables = ['user_role']
 grails.plugin.reveng.manyToManyBelongsTos = ['user_role': 'role', 'author_books': 'book']
 {code}
 
-h4. 7. Run the reverse-engineer script.
+h4. 7. Run the db-reverse-engineer script.
 
 {code}
-grails reverse-engineer
+grails db-reverse-engineer
 {code}
 
 h4. 8. Look at the generated domain classes.
@@ -531,10 +531,10 @@ Also change the configuration to only include the @thing@ table:
 grails.plugin.reveng.includeTables = ['thing']
 {code}
 
-Re-eun the reverse-engineer script:
+Re-eun the db-reverse-engineer script:
 
 {code}
-grails reverse-engineer
+grails db-reverse-engineer
 {code}
 
 The script will generate this domain class in the temp_reverse_engineer/com/revengtest folder:

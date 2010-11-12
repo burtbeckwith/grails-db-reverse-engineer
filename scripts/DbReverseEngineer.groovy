@@ -20,7 +20,7 @@ includeTargets << grailsScript('_GrailsBootstrap')
 /**
  * @author <a href='mailto:burt@burtbeckwith.com'>Burt Beckwith</a>
  */
-target(reverseEngineer: 'Reverse-engineers a database and creates domain classes') {
+target(dbReverseEngineer: 'Reverse-engineers a database and creates domain classes') {
 	depends(packageApp, loadApp)
 
 	createConfig()
@@ -84,4 +84,4 @@ target(reverseEngineer: 'Reverse-engineers a database and creates domain classes
 	ant.echo message: 'Finished reverse engineering'
 }
 
-setDefaultTarget reverseEngineer
+setDefaultTarget dbReverseEngineer

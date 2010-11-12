@@ -2,31 +2,31 @@ It's most convenient when creating an application to also create the database at
 
 This plugin will save you a lot of time by using the JDBC metadata API to inspect your database schema and create domain classes for you, using some assumptions and augmented by configuration options that you set.
 
-The core of the plugin is the [reverse-engineer|Scripts] script. There are too many configuration options to support specifying them when running the script, so it takes no arguments and uses configuration options set in @grails-app/conf/Config.groovy@. These are described in [section 2|guide:2 Configuration].
+The core of the plugin is the [db-reverse-engineer|Scripts] script. There are too many configuration options to support specifying them when running the script, so it takes no arguments and uses configuration options set in @grails-app/conf/Config.groovy@. These are described in [section 2|guide:2 Configuration].
 
 h4. Environments
 
 You can choose which database to read from by specifying the environment when running the script (like any Grails script). For example to use the development environment settings, just run
 
 {code}
-grails reverse-engineer
+grails db-reverse-engineer
 {code}
 
 To use the production environment settings, run
 
 {code}
-grails prod reverse-engineer
+grails prod db-reverse-engineer
 {code}
 
 And if you want to use a custom 'staging' environment configured in @DataSource.groovy@, run
 
 {code}
-grails -Dgrails.env=staging reverse-engineer
+grails -Dgrails.env=staging db-reverse-engineer
 {code}
 
 h4. Re-running the reverse engineering script
 
-If you have new or changed tables you can re-run the [reverse-engineer|Scripts] script to pick up changes and additions. This is not an incremental process though, so existing classes will be overwritten and you will lose any changes you made since the last run. But it's simple to define which tables to include or exclude.
+If you have new or changed tables you can re-run the [db-reverse-engineer|Scripts] script to pick up changes and additions. This is not an incremental process though, so existing classes will be overwritten and you will lose any changes you made since the last run. But it's simple to define which tables to include or exclude.
 
 As described in [section 2|guide:2 Configuration], you can use a combination of the @grails.plugin.reveng.includeTables@, @grails.plugin.reveng.includeTableRegexes@, @grails.plugin.reveng.includeTableAntPatterns@, @grails.plugin.reveng.excludeTables@, @grails.plugin.reveng.excludeTableRegexes@, and @grails.plugin.reveng.excludeTableAntPatterns@ properties to define which tables to include or exclude.
 
@@ -67,7 +67,7 @@ h4. Destination folder
 
 By default the domain classes are generated under the @grails-app/domain@ folder in the package specified. But you can override the destination, for example if you're re-running the process and want to compare the new classes with the previous ones.
 
-By default the @reverse-engineer@ script will overwrite existing classes. You can set the @grails.plugin.reveng.overwriteExisting@ property to @false@ to override this behavior and not overwrite existing files.
+By default the @db-reverse-engineer@ script will overwrite existing classes. You can set the @grails.plugin.reveng.overwriteExisting@ property to @false@ to override this behavior and not overwrite existing files.
 
 h4. Many-to-many tables
 

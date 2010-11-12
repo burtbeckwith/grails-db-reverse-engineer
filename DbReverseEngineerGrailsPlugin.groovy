@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class ReverseEngineerGrailsPlugin {
-	String version = '0.2'
+class DbReverseEngineerGrailsPlugin {
+	String version = '0.3'
 	String grailsVersion = '1.3.0 > *'
 	String author = 'Burt Beckwith'
 	String authorEmail = 'beckwithb@vmware.com'
 	String title = 'Grails Reverse Engineering Plugin'
 	String description = 'Reverse-engineers a database to Grails domain classes.'
-	String documentation = 'http://grails.org/plugin/reverse-engineer'
+	String documentation = 'http://grails.org/plugin/db-reverse-engineer'
 }
