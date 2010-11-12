@@ -77,7 +77,7 @@ target(dbReverseEngineer: 'Reverse-engineers a database and creates domain class
 
 	revengConfig.excludeColumnAntPatterns.each { table, pattern -> strategy.addExcludeColumnAntPattern table, pattern }
 
-	revengConfig.mappedManyToManyTable.each { table -> strategy.addMappedManyToManyTable table }
+	revengConfig.mappedManyToManyTables.each { table -> strategy.addMappedManyToManyTable table }
 
 	ant.echo message: "Starting reverse engineering, connecting to '$reenigne.url' as '$reenigne.username' ..."
 	reenigne.execute()

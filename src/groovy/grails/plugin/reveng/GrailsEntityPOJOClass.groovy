@@ -16,6 +16,8 @@ package grails.plugin.reveng
 
 import grails.util.GrailsNameUtils
 
+import org.codehaus.groovy.grails.commons.ConfigurationHolder as CH
+
 import org.hibernate.cfg.Configuration
 import org.hibernate.cfg.Environment
 import org.hibernate.mapping.Column
@@ -41,6 +43,7 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 	private Cfg2HbmTool c2h
 	private Configuration configuration
 	private String newline = System.getProperty('line.separator')
+	private newProperties = []
 
 	GrailsEntityPOJOClass(PersistentClass clazz, Cfg2JavaTool cfg, Cfg2HbmTool c2h, Configuration configuration) {
 		super(clazz, cfg)
@@ -91,7 +94,7 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 			String delimiter = ''
 			idProperty.value.propertyIterator.each {
 				idDef.append delimiter
-				idDef.append "\"$it.name\""
+				idDef.append "\"${findRealIdName(it)}\""
 				delimiter = ', '
 			}
 			idDef.append ']'
@@ -225,6 +228,10 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 	}
 
 	String renderHashCodeAndEquals() {
+		if (!needsEqualsHashCode()) {
+			return ''
+		}
+
 		def hashCodeDef = new StringBuilder('\tint hashCode() {')
 		hashCodeDef.append newline
 		hashCodeDef.append '\t\tdef builder = new HashCodeBuilder()'
@@ -239,14 +246,18 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 
 		getAllPropertiesIterator().each { property ->
 			if (c2j.getMetaAsBool(property, 'use-in-equals')) {
+				String name = findRealIdName(property)
+				if (name != property.name) {
+					name += '?.id'
+				}
 				hashCodeDef.append '\t\tbuilder.append '
-				hashCodeDef.append property.name
+				hashCodeDef.append name
 				hashCodeDef.append newline
 
 				equalsDef.append '\t\tbuilder.append '
-				equalsDef.append property.name
+				equalsDef.append name
 				equalsDef.append ', other.'
-				equalsDef.append property.name
+				equalsDef.append name
 				equalsDef.append newline
 			}
 		}
@@ -309,47 +320,67 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 			}
 		}
 
-		constraints.toString()
+		constraints.length() ? "\tstatic constraints = {$newline$constraints\t}" : ''
 	}
 
-	String renderMany() {
+	void findNewProperties() {
+
 		def idProperty = getIdentifierProperty()
 		def versionProperty = getVersionProperty()
 
-		def belongs = []
-		def hasMany = []
-		def newProperties = []
 		super.getAllPropertiesIterator().each {
 			if (it == versionProperty || it == idProperty) {
 				return
 			}
 
 			if (it.value instanceof ManyToOne) {
-				String classShortName = classShortName(it.value.referencedEntityName)
-				newProperties << "\t$classShortName $it.name"
-				belongs << classShortName
+				newProperties << it
+			}
+		}
+	}
+
+	String renderMany() {
+
+		def revengConfig = CH.config.grails.plugin.reveng
+		boolean bidirectionalManyToOne = revengConfig.bidirectionalManyToOne instanceof Boolean ?
+				revengConfig.bidirectionalManyToOne : true
+		boolean mapManyToManyJoinTable = revengConfig.mapManyToManyJoinTable instanceof Boolean ?
+				revengConfig.mapManyToManyJoinTable : false
+
+		def idProperty = getIdentifierProperty()
+		def versionProperty = getVersionProperty()
+
+		def belongs = []
+		def hasMany = []
+		def strategy = GrailsReverseEngineeringStrategy.INSTANCE
+		super.getAllPropertiesIterator().each { prop ->
+			if (prop == versionProperty || prop == idProperty) {
+				return
 			}
 
-			if (it.value instanceof org.hibernate.mapping.Set) {
-				hasMany << "$it.name: ${classShortName(it.value.element.type.name)}"
-				def strategy = GrailsReverseEngineeringStrategy.INSTANCE
-				if (strategy.isManyToManyTable(it.value.collectionTable)) {
-					if (strategy.isManyToManyBelongsTo(it.value.collectionTable, it.persistentClass.table)) {
-						belongs << findManyToManyOtherSide(it)
+			if (bidirectionalManyToOne && prop.value instanceof ManyToOne) {
+				if (!isPartOfPrimaryKey(prop)) {
+					belongs << classShortName(prop.value.referencedEntityName)
+				}
+			}
+
+			if (prop.value instanceof org.hibernate.mapping.Set) {
+				boolean isManyToMany = strategy.isManyToManyTable(prop.value.collectionTable)
+				boolean isReallyManyToMany = strategy.isReallyManyToManyTable(prop.value.collectionTable)
+				if ((bidirectionalManyToOne && !isManyToMany && !isReallyManyToMany) || isManyToMany) {
+					String classShortName = classShortName(prop.value.element.type.name)
+					hasMany << "$prop.name: $classShortName"
+					if (isManyToMany) {
+						if (strategy.isManyToManyBelongsTo(prop.value.collectionTable, prop.persistentClass.table)) {
+							belongs << findManyToManyOtherSide(prop)
+						}
 					}
 				}
 			}
 		}
 
-		if (newProperties || belongs || hasMany) {
+		if (belongs || hasMany) {
 			def many = new StringBuilder()
-			if (newProperties) {
-				for (newProperty in newProperties) {
-					many.append newProperty
-					many.append newline
-				}
-				many.append newline
-			}
 			if (hasMany) {
 				many.append combine('\tstatic hasMany = [', ', ', ']', hasMany)
 				many.append newline
@@ -364,6 +395,71 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 		''
 	}
 
+	private boolean isPartOfPrimaryKey(Property prop) {
+		if (c2j.isComponent(getIdentifierProperty()) &&
+					GrailsReverseEngineeringStrategy.INSTANCE.isReallyManyToManyTable(clazz.table)) {
+			String propClassShortName = classShortName(prop.value.referencedEntityName)
+			for (newProp in newProperties) {
+				if (classShortName(newProp.value.referencedEntityName) == propClassShortName) {
+					return true
+				}
+			}
+		}
+
+		false
+	}
+
+	private String findRealIdName(Property prop) {
+		if (c2j.isComponent(getIdentifierProperty()) &&
+					GrailsReverseEngineeringStrategy.INSTANCE.isReallyManyToManyTable(clazz.table)) {
+					
+			for (newProp in newProperties) {
+				if (newProp.name + 'Id' == prop.name) {
+					return newProp.name
+				}
+			}
+		}
+
+		prop.name
+	}
+
+	String renderProperties() {
+		def props = new StringBuilder()
+		getAllPropertiesIterator().each { prop ->
+			if (getMetaAttribAsBool(prop, 'gen-property', true)) {
+				if (findRealIdName(prop) == prop.name) {
+					props.append '\t'
+					props.append getJavaTypeName(prop, true)
+					props.append ' '
+					props.append prop.name
+					props.append newline
+				}
+			}
+		}
+
+		for (prop in newProperties) {
+			props.append '\t'
+			props.append classShortName(prop.value.referencedEntityName)
+			props.append ' '
+			props.append prop.name
+			props.append newline
+		}
+
+		props.toString()
+	}
+
+	String renderMapping() {
+		def mapping = new StringBuilder()
+		mapping.append renderId()
+		mapping.append renderVersion()
+		mapping.append renderTable()
+		mapping.length() ? "\tstatic mapping = {$newline$mapping\t}" : ''
+	}
+
+	String renderClassStart() {
+		"class ${getDeclarationName()}${renderImplements()}{"
+	}
+	
 	String renderImplements() {
 		getIdentifierProperty().columnSpan > 1 ? ' implements Serializable ' : ' '
 	}

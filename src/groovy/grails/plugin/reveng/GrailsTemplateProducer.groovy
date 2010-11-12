@@ -115,7 +115,17 @@ class GrailsTemplateProducer extends TemplateProducer {
 			}
 		}
 
-		fixed.toString()
+		content = fixed.toString()
+
+		// 2nd pass to remove extra blank at end
+		lines = []
+		content.eachLine { lines << it }
+		lines << newline
+		if (!lines[-3]) {
+			lines.remove lines.size() - 3
+		}
+
+		lines.join(newline).trim() + newline
 	}
 
 	private boolean isBlankLine(String line) {
