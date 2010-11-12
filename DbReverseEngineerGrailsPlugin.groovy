@@ -20,4 +20,9 @@ class DbReverseEngineerGrailsPlugin {
 	String title = 'Grails Reverse Engineering Plugin'
 	String description = 'Reverse-engineers a database to Grails domain classes.'
 	String documentation = 'http://grails.org/plugin/db-reverse-engineer'
+
+	List pluginExcludes = [
+		'docs/**',
+		'src/docs/**'
+	]
 }
