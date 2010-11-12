@@ -14,7 +14,7 @@
  */
 package grails.plugin.reveng
 
-import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration
 import org.hibernate.mapping.PersistentClass
 import org.hibernate.tool.hbm2x.Cfg2HbmTool
 import org.hibernate.tool.hbm2x.Cfg2JavaTool

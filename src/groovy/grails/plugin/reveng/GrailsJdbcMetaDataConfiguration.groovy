@@ -15,7 +15,6 @@
 package grails.plugin.reveng
 
 import org.hibernate.cfg.JDBCMetaDataConfiguration
-import org.hibernate.cfg.reveng.DefaultReverseEngineeringStrategy
 import org.hibernate.cfg.reveng.ReverseEngineeringStrategy
 
 /**
