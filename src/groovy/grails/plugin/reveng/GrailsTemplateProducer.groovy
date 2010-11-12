@@ -93,6 +93,32 @@ class GrailsTemplateProducer extends TemplateProducer {
 			throw new RuntimeException('Error while flushing to string', e)
 		}
 
-		writer.toString()
+		fixWhitespace writer.toString()
+	}
+
+	private String fixWhitespace(String content) {
+		String newline = System.getProperty('line.separator')
+		def lines = []
+		content.eachLine { lines << it }
+		lines << newline
+
+		def fixed = new StringBuilder()
+		int count = lines.size()
+		for (int i = 0; i < count - 1; i++) {
+			String line = lines[i]
+			fixed.append line
+			fixed.append newline
+			if (isBlankLine(line)) {
+				while (isBlankLine(lines[i + 1]) && i < count - 1) {
+					i++
+				}
+			}
+		}
+
+		fixed.toString()
+	}
+
+	private boolean isBlankLine(String line) {
+		!line || !line.trim()
 	}
 }
