@@ -29,11 +29,12 @@ class GrailsPojoExporter extends POJOExporter {
 	private Cfg2HbmTool c2h
 	private GrailsCfg2JavaTool c2j
 	private boolean overwrite
+	private ConfigObject grailsConfig
 
-	GrailsPojoExporter(boolean overwrite) {
+	GrailsPojoExporter(boolean overwrite, ConfigObject grailsConfig) {
 		this.overwrite = overwrite
 		c2h = new Cfg2HbmTool()
-		c2j = new GrailsCfg2JavaTool(c2h, getConfiguration())
+		c2j = new GrailsCfg2JavaTool(c2h, getConfiguration(), grailsConfig)
 	}
 
 	@Override

@@ -29,14 +29,16 @@ class GrailsCfg2JavaTool extends Cfg2JavaTool {
 
 	private Cfg2HbmTool c2h
 	private Configuration configuration
+	private ConfigObject grailsConfig
 
-	GrailsCfg2JavaTool(Cfg2HbmTool c2h, Configuration configuration) {
+	GrailsCfg2JavaTool(Cfg2HbmTool c2h, Configuration configuration, ConfigObject grailsConfig) {
 		this.c2h = c2h
 		this.configuration = configuration
+		this.grailsConfig = grailsConfig
 	}
 
 	@Override
 	POJOClass getPOJOClass(PersistentClass comp) {
-		new GrailsEntityPOJOClass(comp, this, c2h, configuration)
+		new GrailsEntityPOJOClass(comp, this, c2h, configuration, grailsConfig)
 	}
 }

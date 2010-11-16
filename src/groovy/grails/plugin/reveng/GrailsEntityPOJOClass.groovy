@@ -16,8 +16,6 @@ package grails.plugin.reveng
 
 import grails.util.GrailsNameUtils
 
-import org.codehaus.groovy.grails.commons.ConfigurationHolder as CH
-
 import org.hibernate.cfg.Configuration
 import org.hibernate.cfg.Environment
 import org.hibernate.mapping.Column
@@ -42,14 +40,17 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 	private PersistentClass clazz
 	private Cfg2HbmTool c2h
 	private Configuration configuration
+	private ConfigObject grailsConfig
 	private String newline = System.getProperty('line.separator')
 	private newProperties = []
 
-	GrailsEntityPOJOClass(PersistentClass clazz, Cfg2JavaTool cfg, Cfg2HbmTool c2h, Configuration configuration) {
+	GrailsEntityPOJOClass(PersistentClass clazz, Cfg2JavaTool cfg, Cfg2HbmTool c2h,
+			Configuration configuration, ConfigObject grailsConfig) {
 		super(clazz, cfg)
 		this.clazz = clazz
 		this.c2h = c2h
 		this.configuration = configuration
+		this.grailsConfig = grailsConfig
 	}
 
 	@Override
@@ -341,7 +342,7 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 
 	String renderMany() {
 
-		def revengConfig = CH.config.grails.plugin.reveng
+		def revengConfig = grailsConfig.grails.plugin.reveng
 		boolean bidirectionalManyToOne = revengConfig.bidirectionalManyToOne instanceof Boolean ?
 				revengConfig.bidirectionalManyToOne : true
 		boolean mapManyToManyJoinTable = revengConfig.mapManyToManyJoinTable instanceof Boolean ?

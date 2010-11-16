@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import org.codehaus.groovy.grails.commons.ConfigurationHolder as CH
-
 includeTargets << grailsScript('_GrailsBootstrap')
 
 /**
@@ -24,9 +22,10 @@ target(dbReverseEngineer: 'Reverse-engineers a database and creates domain class
 	depends(packageApp, loadApp)
 
 	createConfig()
-	def dsConfig = CH.config.dataSource
+	def dsConfig = config.dataSource
 
 	def reenigne = classLoader.loadClass('grails.plugin.reveng.Reenigne').newInstance()
+	reenigne.grailsConfig = config
 	reenigne.driverClass = dsConfig.driverClassName ?: 'org.hsqldb.jdbcDriver' // 'org.h2.Driver'
 	reenigne.password = dsConfig.password ?: ''
 	reenigne.username = dsConfig.username ?: 'sa'
@@ -38,7 +37,7 @@ target(dbReverseEngineer: 'Reverse-engineers a database and creates domain class
 		reenigne.dialect = dsConfig.dialect.name
 	}
 
-	def revengConfig = CH.config.grails.plugin.reveng
+	def revengConfig = config.grails.plugin.reveng
 	reenigne.packageName = revengConfig.packageName ?: metadata['app.name']
 	reenigne.destDir = new File(basedir, revengConfig.destDir ?: 'grails-app/domain')
 	if (revengConfig.defaultSchema) {
@@ -78,6 +77,10 @@ target(dbReverseEngineer: 'Reverse-engineers a database and creates domain class
 	revengConfig.excludeColumnAntPatterns.each { table, pattern -> strategy.addExcludeColumnAntPattern table, pattern }
 
 	revengConfig.mappedManyToManyTables.each { table -> strategy.addMappedManyToManyTable table }
+
+	if (revengConfig.alwaysMapManyToManyTables instanceof Boolean) {
+		strategy.alwaysMapManyToManyTables = revengConfig.alwaysMapManyToManyTables
+	}
 
 	ant.echo message: "Starting reverse engineering, connecting to '$reenigne.url' as '$reenigne.username' ..."
 	reenigne.execute()

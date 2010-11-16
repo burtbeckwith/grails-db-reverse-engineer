@@ -46,6 +46,8 @@ class Reenigne {
 	boolean jdk5 = true
 	boolean overwrite = true
 
+	ConfigObject grailsConfig
+
 	GrailsReverseEngineeringStrategy reverseEngineeringStrategy = GrailsReverseEngineeringStrategy.INSTANCE
 
 	private GrailsPojoExporter pojoExporter
@@ -57,7 +59,7 @@ class Reenigne {
 		try {
 			buildConfiguration()
 
-			pojoExporter = new GrailsPojoExporter(overwrite)
+			pojoExporter = new GrailsPojoExporter(overwrite, grailsConfig)
 			configureExporter pojoExporter
 			pojoExporter.getProperties().setProperty('ejb3', ejb3.toString())
 			pojoExporter.getProperties().setProperty('jdk5', jdk5.toString())
