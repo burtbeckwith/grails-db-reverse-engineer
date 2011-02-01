@@ -17,6 +17,17 @@ grails.project.dependency.resolution = {
 	}
 
 	dependencies {
-		compile 'org.hibernate:hibernate-tools:3.2.4.GA'
+		compile('org.hibernate:hibernate-tools:3.2.4.GA') {
+			transitive = false
+		}
+		compile('freemarker:freemarker:2.3.8') {
+			transitive = false
+		}
+		compile('org.beanshell:bsh:2.0b4') {
+			transitive = false
+		}
+		compile('org.hibernate:jtidy:r8-20060801') {
+			transitive = false
+		}
 	}
 }
