@@ -13,6 +13,7 @@ grails.project.dependency.resolution = {
 		grailsHome()
 		grailsCentral()
 
+		mavenCentral()
 		mavenRepo 'http://repository.jboss.com/maven2/'
 	}
 
