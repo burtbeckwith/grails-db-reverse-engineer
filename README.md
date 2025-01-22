@@ -1,0 +1,1 @@
+This plugin has moved to https://github.com/grails-plugins/grails-db-reverse-engineer
